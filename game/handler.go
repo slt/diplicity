@@ -152,11 +152,10 @@ func (h *userStatsHandler) handle(w ResponseWriter, r Request) error {
 }
 
 type gamesHandler struct {
-	query   *datastore.Query
-	name    string
-	desc    []string
-	route   string
-	private bool
+	query *datastore.Query
+	name  string
+	desc  []string
+	route string
 }
 
 type gamesReq struct {
@@ -274,7 +273,6 @@ func (h *gamesHandler) prepare(w ResponseWriter, r Request, userId *string, view
 	limit, err := strconv.ParseInt(uq.Get("limit"), 10, 64)
 	if err != nil || limit > maxLimit {
 		limit = maxLimit
-		err = nil
 	}
 	req.limit = int(limit)
 

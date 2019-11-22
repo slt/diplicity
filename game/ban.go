@@ -94,7 +94,7 @@ func BanID(ctx context.Context, userIds []string) (*datastore.Key, error) {
 	if len(userIds) != 2 {
 		return nil, fmt.Errorf("bans must have exactly 2 user ids")
 	}
-	sort.Sort(sort.StringSlice(userIds))
+	sort.Strings(userIds)
 	return datastore.NewKey(ctx, banKind, strings.Join(userIds, ","), 0, nil), nil
 }
 

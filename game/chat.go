@@ -162,10 +162,16 @@ func sendEmailError(ctx context.Context, to string, errorMessage string) error {
 	}
 
 	msg := sendgrid.NewMail()
-	msg.SetText(fmt.Sprint("Your recent mail to diplicity was not successfully parsed.\n\nAn error message follows.\n\n%v", errorMessage))
+	msg.SetText(fmt.Sprintf("Your recent mail to diplicity was not successfully parsed.\n\nAn error message follows.\n\n%v", errorMessage))
 	msg.SetSubject("Unsuccessfully parsed")
-	msg.AddTo(to)
-	msg.SetFrom(noreplyFromAddr)
+
+	if err = msg.AddTo(to); err != nil {
+		return err
+	}
+
+	if err = msg.SetFrom(noreplyFromAddr); err != nil {
+		return err
+	}
 
 	client := sendgrid.NewSendGridClientWithApiKey(sendGridConf.APIKey)
 	client.Client = urlfetch.Client(ctx)
@@ -364,7 +370,7 @@ func sendMsgNotificationsToUsers(ctx context.Context, host, scheme string, gameI
 			return err
 		}
 		if err := countUnreadMessages(ctx, channels, member.Nation); err != nil {
-			log.Errorf(ctx, "Unable to count unread messages for %v in %v; hope datastore gets fixed", member.Nation, gameID, err)
+			log.Errorf(ctx, "Unable to count unread messages for %v in %v: %v; hope datastore gets fixed", member.Nation, gameID, err)
 			return err
 		}
 		total := 0
@@ -866,7 +872,6 @@ func listMessages(w ResponseWriter, r Request) error {
 			}
 			seenMarker = &SeenMarker{}
 			if err := datastore.Get(ctx, seenMarkerID, seenMarker); err == datastore.ErrNoSuchEntity {
-				err = nil
 				seenMarker = nil
 			} else if err != nil {
 				return err
@@ -1020,7 +1025,7 @@ func countUnreadMessages(ctx context.Context, channels Channels, viewer godip.Na
 		}(&channels[i], seenMarkerTimes[i])
 	}
 	merr := appengine.MultiError{}
-	for _ = range channels {
+	for range channels {
 		if err := <-results; err != nil {
 			merr = append(merr, err)
 		}

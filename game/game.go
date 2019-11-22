@@ -668,7 +668,10 @@ func merge(ctx context.Context, r Request, game *Game, user *auth.User) (*Game, 
 	}
 	sort.Sort(games)
 
-	games.RemoveBanned(ctx, user.Id)
+	_, err = games.RemoveBanned(ctx, user.Id)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, otherGame := range games {
 		if game.canMergeInto(&otherGame, user) {
@@ -989,7 +992,6 @@ func loadGame(w ResponseWriter, r Request) (*Game, error) {
 		if merr, ok := err.(appengine.MultiError); ok {
 			if merr[0] == nil && merr[1] == datastore.ErrNoSuchEntity {
 				userStats.UserId = user.Id
-				err = nil
 			} else {
 				return nil, err
 			}

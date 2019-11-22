@@ -93,7 +93,6 @@ type phaseNotificationContext struct {
 	userID       *datastore.Key
 	userConfigID *datastore.Key
 	phaseID      *datastore.Key
-	memberID     *datastore.Key
 	game         *Game
 	phase        *Phase
 	member       *Member
@@ -1097,7 +1096,10 @@ func loadPhase(w ResponseWriter, r Request) (*Phase, error) {
 
 	user, ok := r.Values()["user"].(*auth.User)
 	if !ok {
-		return nil, HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return nil, HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	gameID, err := datastore.DecodeKey(r.Vars()["game_id"])
@@ -1237,7 +1239,10 @@ func listOptions(w ResponseWriter, r Request) error {
 
 	user, ok := r.Values()["user"].(*auth.User)
 	if !ok {
-		return HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	gameID, err := datastore.DecodeKey(r.Vars()["game_id"])
@@ -1264,7 +1269,10 @@ func listOptions(w ResponseWriter, r Request) error {
 
 	member, isMember := game.GetMemberByUserId(user.Id)
 	if !isMember {
-		return HTTPErr{"can only load options for member games", http.StatusNotFound}
+		return HTTPErr{
+			Body:   "can only load options for member games",
+			Status: http.StatusNotFound,
+		}
 	}
 
 	phaseStateID, err := PhaseStateID(ctx, phaseID, member.Nation)
@@ -1419,7 +1427,10 @@ func renderPhaseMap(w ResponseWriter, r Request) error {
 
 	user, ok := r.Values()["user"].(*auth.User)
 	if !ok {
-		return HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	gameID, err := datastore.DecodeKey(r.Vars()["game_id"])
@@ -1452,7 +1463,6 @@ func renderPhaseMap(w ResponseWriter, r Request) error {
 			if merr[0] != nil || merr[1] != nil || (merr[2] != nil && merr[2] != datastore.ErrNoSuchEntity) {
 				return merr
 			}
-			err = nil
 		} else {
 			return err
 		}
@@ -1487,7 +1497,10 @@ func listPhases(w ResponseWriter, r Request) error {
 
 	user, ok := r.Values()["user"].(*auth.User)
 	if !ok {
-		return HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	gameID, err := datastore.DecodeKey(r.Vars()["game_id"])

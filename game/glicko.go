@@ -122,7 +122,7 @@ func processGlickos(ctx context.Context, gameResult *GameResult, onlyUnrated boo
 			done <- err
 		}(i, member)
 	}
-	for _ = range game.Members {
+	for range game.Members {
 		if err := <-done; err != nil {
 			log.Errorf(ctx, "Unable to fetch latest glicko for all members: %v; fix GetGlicko or hope datastore gets fixed", err)
 			return err

@@ -245,13 +245,15 @@ func loadUserConfig(w ResponseWriter, r Request) (*UserConfig, error) {
 
 	user, ok := r.Values()["user"].(*User)
 	if !ok {
-		return nil, HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return nil, HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	config := &UserConfig{}
 	if err := datastore.Get(ctx, UserConfigID(ctx, user.ID(ctx)), config); err == datastore.ErrNoSuchEntity {
 		config.UserId = user.Id
-		err = nil
 	} else if err != nil {
 		return nil, err
 	}
@@ -264,7 +266,10 @@ func updateUserConfig(w ResponseWriter, r Request) (*UserConfig, error) {
 
 	user, ok := r.Values()["user"].(*User)
 	if !ok {
-		return nil, HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return nil, HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	config := &UserConfig{}

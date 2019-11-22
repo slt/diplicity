@@ -141,7 +141,10 @@ func deleteRedirectURL(w ResponseWriter, r Request) (*RedirectURL, error) {
 
 	user, ok := r.Values()["user"].(*User)
 	if !ok {
-		return nil, HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return nil, HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	redirectURLID, err := datastore.DecodeKey(r.Vars()["id"])
@@ -155,7 +158,10 @@ func deleteRedirectURL(w ResponseWriter, r Request) (*RedirectURL, error) {
 			return err
 		}
 		if redirectURL.UserId != user.Id {
-			return HTTPErr{"can only delete your own redirect URLs", http.StatusForbidden}
+			return HTTPErr{
+				Body:   "can only delete your own redirect URLs",
+				Status: http.StatusForbidden,
+			}
 		}
 
 		return datastore.Delete(ctx, redirectURLID)
@@ -185,11 +191,17 @@ func listRedirectURLs(w ResponseWriter, r Request) error {
 
 	user, ok := r.Values()["user"].(*User)
 	if !ok {
-		return HTTPErr{"unauthenticated", http.StatusUnauthorized}
+		return HTTPErr{
+			Body:   "unauthenticated",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	if user.Id != r.Vars()["user_id"] {
-		return HTTPErr{"can only list your own redirect URLs", http.StatusForbidden}
+		return HTTPErr{
+			Body:   "can only list your own redirect URLs",
+			Status: http.StatusForbidden,
+		}
 	}
 
 	redirectURLs := RedirectURLs{}
@@ -267,7 +279,10 @@ func SetSuperusers(ctx context.Context, superusers *Superusers) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		currentSuperusers := &Superusers{}
 		if err := datastore.Get(ctx, getSuperusersKey(ctx), currentSuperusers); err == nil {
-			return HTTPErr{"Superusers already configured", http.StatusBadRequest}
+			return HTTPErr{
+				Body:   "Superusers already configured",
+				Status: http.StatusBadRequest,
+			}
 		}
 		if _, err := datastore.Put(ctx, getSuperusersKey(ctx), superusers); err != nil {
 			return err
@@ -354,7 +369,10 @@ func SetOAuth(ctx context.Context, oAuth *OAuth) error {
 	return datastore.RunInTransaction(ctx, func(ctx context.Context) error {
 		currentOAuth := &OAuth{}
 		if err := datastore.Get(ctx, getOAuthKey(ctx), currentOAuth); err == nil {
-			return HTTPErr{"OAuth already configured", http.StatusBadRequest}
+			return HTTPErr{
+				Body:   "OAuth already configured",
+				Status: http.StatusBadRequest,
+			}
 		}
 		if _, err := datastore.Put(ctx, getOAuthKey(ctx), oAuth); err != nil {
 			return err
@@ -471,7 +489,10 @@ func DecodeBytes(ctx context.Context, b []byte) ([]byte, error) {
 
 	plain, ok := secretbox.Open([]byte{}, b[24:], &nonceAry, &secretAry)
 	if !ok {
-		return nil, HTTPErr{"badly encrypted token", http.StatusUnauthorized}
+		return nil, HTTPErr{
+			Body:   "badly encrypted token",
+			Status: http.StatusUnauthorized,
+		}
 	}
 	return plain, nil
 }
@@ -641,10 +662,16 @@ func tokenFilter(w ResponseWriter, r Request) (bool, error) {
 		if authHeader := r.Req().Header.Get("Authorization"); authHeader != "" {
 			parts := strings.Split(authHeader, " ")
 			if len(parts) != 2 {
-				return false, HTTPErr{"Authorization header not two parts joined by space", http.StatusBadRequest}
+				return false, HTTPErr{
+					Body:   "Authorization header not two parts joined by space",
+					Status: http.StatusBadRequest,
+				}
 			}
 			if strings.ToLower(parts[0]) != "bearer" {
-				return false, HTTPErr{"Authorization header part 1 not 'bearer'", http.StatusBadRequest}
+				return false, HTTPErr{
+					Body:   "Authorization header part 1 not 'bearer'",
+					Status: http.StatusBadRequest,
+				}
 			}
 			token = parts[1]
 		}
@@ -661,7 +688,10 @@ func tokenFilter(w ResponseWriter, r Request) (bool, error) {
 			return false, err
 		}
 		if user.ValidUntil.Before(time.Now()) {
-			return false, HTTPErr{"token timed out", http.StatusUnauthorized}
+			return false, HTTPErr{
+				Body:   "token timed out",
+				Status: http.StatusUnauthorized,
+			}
 		}
 
 		log.Infof(ctx, "Request by %+v", user)
@@ -673,7 +703,10 @@ func tokenFilter(w ResponseWriter, r Request) (bool, error) {
 			}
 
 			if !superusers.Includes(user.Id) {
-				return false, HTTPErr{"unauthorized", http.StatusForbidden}
+				return false, HTTPErr{
+					Body:   "unauthorized",
+					Status: http.StatusForbidden,
+				}
 			}
 
 			log.Infof(ctx, "Faking user Id %q", fakeID)
@@ -780,6 +813,10 @@ func handleApproveRedirect(w ResponseWriter, r Request) error {
 	}
 
 	loginURL, err := router.Get(LoginRoute).URL()
+	if err != nil {
+		return err
+	}
+
 	q := loginURL.Query()
 	q.Set("redirect-to", toApproveURL.String())
 	loginURL.RawQuery = q.Encode()
@@ -859,7 +896,10 @@ func unsubscribe(w ResponseWriter, r Request) error {
 	}
 
 	if decodedUserId != r.Vars()["user_id"] {
-		return HTTPErr{"can only unsubscribe yourself", http.StatusForbidden}
+		return HTTPErr{
+			Body:   "can only unsubscribe yourself",
+			Status: http.StatusForbidden,
+		}
 	}
 
 	userID := UserID(ctx, r.Vars()["user_id"])
@@ -923,7 +963,10 @@ func replaceFCM(w ResponseWriter, r Request) error {
 
 	replaceToken := r.Vars()["replace_token"]
 	if replaceToken == "" {
-		return HTTPErr{"no such FCM token found", http.StatusNotFound}
+		return HTTPErr{
+			Body:   "no such FCM token found",
+			Status: http.StatusNotFound,
+		}
 	}
 
 	fcmValue := &FCMValue{}
@@ -937,10 +980,16 @@ func replaceFCM(w ResponseWriter, r Request) error {
 		return err
 	}
 	if len(userConfigs) == 0 {
-		return HTTPErr{"no such FCM token found", http.StatusNotFound}
+		return HTTPErr{
+			Body:   "no such FCM token found",
+			Status: http.StatusNotFound,
+		}
 	}
 	if len(userConfigs) > 1 {
-		return HTTPErr{"too many FCM tokens found?", http.StatusInternalServerError}
+		return HTTPErr{
+			Body:   "too many FCM tokens found?",
+			Status: http.StatusInternalServerError,
+		}
 	}
 	for i := range userConfigs[0].FCMTokens {
 		if userConfigs[0].FCMTokens[i].ReplaceToken == replaceToken {
@@ -985,7 +1034,10 @@ func handleTestUpdateUser(w ResponseWriter, r Request) error {
 	ctx := appengine.NewContext(r.Req())
 
 	if !appengine.IsDevAppServer() {
-		return HTTPErr{"only permitted during tests", http.StatusUnauthorized}
+		return HTTPErr{
+			Body:   "only permitted during tests",
+			Status: http.StatusUnauthorized,
+		}
 	}
 
 	user := &User{}
